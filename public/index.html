@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nihongo Kaiwa - Latihan Berbicara Bahasa Jepang</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .status.online {
+            border-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.offline {
+            border-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn-record {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-record:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-record:active {
+            transform: translateY(0);
+        }
+
+        .btn-record.recording {
+            background: #dc3545;
+            animation: pulse 1.5s infinite;
+        }
+
+        .btn-stop {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .conversation {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.ai {
+            background: #28a745;
+            color: white;
+            margin-right: auto;
+        }
+
+        .message.japanese {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .transcript {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 10px;
+            min-height: 60px;
+            font-size: 1.1em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .warning {
+            text-align: center;
+            color: #dc3545;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Nihongo Kaiwa</h1>
+        <p class="subtitle">Latihan berbicara bahasa Jepang dengan AI</p>
+
+        <div id="warning" class="warning" style="display: none;">
+            Peringatan: Browser Anda tidak mendukung Web Speech API
+        </div>
+
+        <div id="status" class="status offline">
+            Status: Memeriksa koneksi...
+        </div>
+
+        <div class="controls">
+            <button id="recordBtn" class="btn btn-record" disabled>
+                🎤 Mulai Rekam
+            </button>
+            <button id="stopBtn" class="btn btn-stop" disabled>
+                ⏹️ Berhenti
+            </button>
+        </div>
+
+        <div class="transcript">
+            <strong>Transkrip:</strong><br>
+            <span id="transcriptText">Silakan tekan tombol rekam untuk memulai...</span>
+        </div>
+
+        <div class="conversation" id="conversation">
+            <!-- Percakapan akan muncul di sini -->
+        </div>
+
+        <div class="footer">
+            <p>Gunakan browser modern seperti Chrome atau Edge untuk pengalaman terbaik</p>
+            <p>Fitur ini menggunakan Web Speech API (gratis dan offline)</p>
+        </div>
+    </div>
+
+    <script>
+        // Cek dukungan Web Speech API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const speechSynthesis = window.speechSynthesis;
+
+        const warningEl = document.getElementById('warning');
+        const statusEl = document.getElementById('status');
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const transcriptText = document.getElementById('transcriptText');
+        const conversationEl = document.getElementById('conversation');
+
+        let recognition;
+        let isRecording = false;
+
+        // Cek dukungan browser
+        function checkBrowserSupport() {
+            if (!SpeechRecognition) {
+                warningEl.style.display = 'block';
+                statusEl.textContent = 'Status: Browser tidak mendukung Web Speech API';
+                statusEl.className = 'status offline';
+                return false;
+            }
+
+            if (!speechSynthesis) {
+                warningEl.innerHTML = 'Peringatan: Browser Anda tidak mendukung Text-to-Speech';
+            }
+
+            statusEl.textContent = 'Status: Siap digunakan';
+            statusEl.className = 'status online';
+            recordBtn.disabled = false;
+            return true;
+        }
+
+        // Inisialisasi Speech Recognition
+        function initSpeechRecognition() {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID'; // Bahasa Indonesia untuk input
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                recordBtn.textContent = '🔴 Sedang merekam...';
+                recordBtn.classList.add('recording');
+                stopBtn.disabled = false;
+                transcriptText.textContent = 'Sedang mendengarkan...';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                transcriptText.textContent = transcript;
+                addMessage(transcript, 'user');
+
+                // Proses dengan AI (placeholder)
+                processWithAI(transcript);
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                recordBtn.textContent = '🎤 Mulai Rekam';
+                recordBtn.classList.remove('recording');
+                stopBtn.disabled = true;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error', event.error);
+                transcriptText.textContent = 'Terjadi kesalahan, silakan coba lagi';
+                stopRecording();
+            };
+        }
+
+        // Mulai merekam
+        function startRecording() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+            }
+        }
+
+        // Berhenti merekam
+        function stopRecording() {
+            if (recognition && isRecording) {
+                try {
+                    recognition.stop();
+                } catch (error) {
+                    console.error('Error stopping recognition:', error);
+                }
+            }
+        }
+
+        // Tambahkan pesan ke percakapan
+        function addMessage(text, type) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = text;
+            conversationEl.appendChild(messageEl);
+            conversationEl.scrollTop = conversationEl.scrollHeight;
+        }
+
+        // Proses dengan AI (OpenRouter)
+        async function processWithAI(text) {
+            try {
+                transcriptText.textContent = '🤖 AI sedang merespons...';
+                
+                // Kirim ke backend API
+                const response = await fetch('/api/openrouter/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'user', content: text }
+                        ],
+                        model: 'google/gemma-3-4b-it:free',
+                        temperature: 0.7,
+                        maxTokens: 500
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const aiResponse = data.text;
+                    addMessage(aiResponse, 'ai japanese');
+
+                    // Tambahkan respon dalam bahasa Indonesia
+                    const indonesianResponse = "AI telah merespons dalam bahasa Jepang!";
+                    addMessage(indonesianResponse, 'ai');
+
+                    // TTS untuk respon Jepang (jika didukung)
+                    if (speechSynthesis && aiResponse) {
+                        const utterance = new SpeechSynthesisUtterance(aiResponse);
+                        utterance.lang = 'ja-JP';
+                        utterance.rate = 0.9;
+                        utterance.pitch = 1;
+
+                        try {
+                            speechSynthesis.speak(utterance);
+                        } catch (error) {
+                            console.error('TTS error:', error);
+                        }
+                    }
+                } else {
+                    throw new Error(data.error || 'Gagal mendapatkan respons dari AI');
+                }
+            } catch (error) {
+                console.error('AI processing error:', error);
+                transcriptText.textContent = 'Terjadi kesalahan saat menghubungi AI. Silakan coba lagi.';
+                
+                // Tampilkan pesan error di percakapan
+                addMessage('Maaf, terjadi kesalahan koneksi. Silakan coba lagi.', 'ai');
+            }
+        }
+
+        // Event listeners
+        recordBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+
+        // Inisialisasi aplikasi
+        document.addEventListener('DOMContentLoaded', () => {
+            checkBrowserSupport();
+        });
+    </script>
+</body>
+</html>
