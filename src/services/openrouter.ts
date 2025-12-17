@@ -182,7 +182,7 @@ class OpenRouterService {
   }> {
     // Add system message to set context for Japanese language learning
     const systemMessage: OpenRouterMessage = {
-      role: 'system',
+      role: 'user',
       content: `Anda adalah teman chatting bahasa Jepang yang ramah dan sabar.
       Tugas Anda adalah membantu pengguna berlatih percakapan bahasa Jepang sehari-hari.
       - Selalu gunakan bahasa Jepang dalam percakapan
@@ -191,13 +191,14 @@ class OpenRouterService {
       - Jangan gunakan bahasa Indonesia dalam respons Anda
       - Fokus pada percakapan santai dan pembelajaran bahasa
       - Gunakan ekspresi yang umum digunakan dalam kehidupan sehari-hari
+      - Tidak perlu menulis romajinya (Kecuali jika diminta)
       
       日本語で会話練習をしましょう！`
     };
 
     const messagesWithSystem = [systemMessage, ...messages];
     
-    const response = await this.sendChat(messagesWithSystem, model, options);
+    const response = await this.sendChat(messages, model, options);
     return this.processResponse(response);
   }
 

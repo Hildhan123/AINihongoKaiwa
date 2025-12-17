@@ -29,7 +29,7 @@ app.get('/api/status', (req: express.Request, res: express.Response) => {
 // OpenRouter Chat API
 app.post('/api/openrouter/chat', async (req: express.Request, res: express.Response) => {
   try {
-    const { messages, model, temperature, maxTokens } = req.body;
+    const { messages, model, temperature, maxTokens, sessionId } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({
@@ -41,7 +41,8 @@ app.post('/api/openrouter/chat', async (req: express.Request, res: express.Respo
       model: model || 'google/gemma-3-4b-it:free',
       messagesCount: messages.length,
       temperature: temperature || 0.7,
-      maxTokens: maxTokens || 1000
+      maxTokens: maxTokens || 1000,
+      sessionId: sessionId || 'no-session'
     });
 
     // Kirim ke OpenRouter
@@ -59,7 +60,8 @@ app.post('/api/openrouter/chat', async (req: express.Request, res: express.Respo
     res.json({
       success: true,
       text: response.text,
-      usage: response.usage
+      usage: response.usage,
+      sessionId: sessionId || null
     });
 
   } catch (error: any) {
@@ -67,7 +69,8 @@ app.post('/api/openrouter/chat', async (req: express.Request, res: express.Respo
     
     res.status(500).json({
       success: false,
-      error: error.message || 'Failed to process chat request'
+      error: error.message || 'Failed to process chat request',
+      sessionId: req.body.sessionId || null
     });
   }
 });

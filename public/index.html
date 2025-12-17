@@ -30,10 +30,63 @@
             max-width: 600px;
         }
 
+        .session-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .session-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-session {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-new {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-save {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-size: 2.5em;
         }
 
@@ -134,6 +187,7 @@
             padding: 10px 15px;
             border-radius: 15px;
             max-width: 80%;
+            position: relative;
         }
 
         .message.user {
@@ -152,6 +206,17 @@
         .message.japanese {
             background: #6f42c1;
             color: white;
+        }
+
+        .message-content {
+            margin-bottom: 5px;
+        }
+
+        .message-meta {
+            font-size: 0.8em;
+            opacity: 0.8;
+            display: flex;
+            gap: 8px;
         }
 
         .transcript {
@@ -195,13 +260,31 @@
                 width: 100%;
                 max-width: 300px;
             }
+
+            .session-controls {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="session-header">
+            <h2>🤖 Session Manager</h2>
+            <div class="session-info" id="sessionInfo">
+                Session: <span id="sessionId">-</span><br>
+                Last Activity: <span id="lastActivity">-</span>
+            </div>
+        </div>
+
         <h1>🤖 AI Nihongo Kaiwa</h1>
         <p class="subtitle">Latihan berbicara bahasa Jepang dengan AI</p>
+
+        <div class="session-controls">
+            <button id="newSessionBtn" class="btn-session btn-new">🆕 Sesi Baru</button>
+            <button id="saveSessionBtn" class="btn-session btn-save">💾 Simpan Sesi</button>
+        </div>
 
         <div id="warning" class="warning" style="display: none;">
             Peringatan: Browser Anda tidak mendukung Web Speech API
@@ -236,6 +319,185 @@
     </div>
 
     <script>
+        // Session Manager Class
+        class SessionManager {
+            constructor() {
+                this.currentSession = null;
+                this.storageKey = 'ai_nihongo_sessions';
+                this.maxMessages = 50; // Batasi 50 pesan terakhir
+                this.sessionTimeout = 30 * 60 * 1000; // 30 menit timeout
+            }
+
+            // Generate unique session ID
+            generateSessionId() {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                return `nihongo_${timestamp}`;
+            }
+
+            // Create new session
+            createSession() {
+                this.currentSession = {
+                    sessionId: this.generateSessionId(),
+                    createdAt: new Date().toISOString(),
+                    lastActivity: new Date().toISOString(),
+                    language: 'ja-JP',
+                    model: 'google/gemma-3-4b-it:free',
+                    messages: [],
+                    settings: {
+                        temperature: 0.7,
+                        maxTokens: 500,
+                        autoTTS: true
+                    }
+                };
+                
+                // Save to sessionStorage (hanya selama browser terbuka)
+                sessionStorage.setItem('current_session', JSON.stringify(this.currentSession));
+                
+                // Update localStorage tracking
+                this.updateSessionHistory();
+                
+                return this.currentSession;
+            }
+
+            // Load session from sessionStorage
+            loadSession() {
+                const saved = sessionStorage.getItem('current_session');
+                if (saved) {
+                    try {
+                        this.currentSession = JSON.parse(saved);
+                        return this.currentSession;
+                    } catch (error) {
+                        console.warn('Failed to parse saved session:', error);
+                        return this.createSession();
+                    }
+                }
+                return this.createSession();
+            }
+
+            // Add message to session history
+            addMessage(role, content) {
+                if (!this.currentSession) {
+                    this.loadSession();
+                }
+
+                const message = {
+                    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    role: role,
+                    content: content,
+                    timestamp: new Date().toISOString()
+                };
+
+                this.currentSession.messages.push(message);
+                this.currentSession.lastActivity = new Date().toISOString();
+
+                // Batasi jumlah pesan
+                if (this.currentSession.messages.length > this.maxMessages) {
+                    this.currentSession.messages = this.currentSession.messages.slice(-this.maxMessages);
+                }
+
+                // Save to sessionStorage
+                sessionStorage.setItem('current_session', JSON.stringify(this.currentSession));
+                
+                // Update localStorage tracking
+                this.updateSessionHistory();
+
+                return message;
+            }
+
+            // Get session history for AI
+            getSessionHistory() {
+                if (!this.currentSession) {
+                    return [];
+                }
+                return this.currentSession.messages;
+            }
+
+            // Get current session info
+            getSessionInfo() {
+                if (!this.currentSession) {
+                    return null;
+                }
+                return {
+                    sessionId: this.currentSession.sessionId,
+                    messageCount: this.currentSession.messages.length,
+                    createdAt: this.currentSession.createdAt,
+                    lastActivity: this.currentSession.lastActivity
+                };
+            }
+
+            // Clear current session
+            clearSession() {
+                this.currentSession = null;
+                sessionStorage.removeItem('current_session');
+            }
+
+            // Update session history in localStorage
+            updateSessionHistory() {
+                if (!this.currentSession) return;
+
+                let history = [];
+                try {
+                    const saved = localStorage.getItem(this.storageKey);
+                    if (saved) {
+                        history = JSON.parse(saved);
+                    }
+                } catch (error) {
+                    console.warn('Failed to parse session history:', error);
+                }
+
+                // Cek apakah session sudah ada di history
+                const existingIndex = history.findIndex(s => s.sessionId === this.currentSession.sessionId);
+                const sessionInfo = this.getSessionInfo();
+
+                if (existingIndex >= 0) {
+                    history[existingIndex] = sessionInfo;
+                } else {
+                    history.push(sessionInfo);
+                }
+
+                // Batasi history (max 10 sessions)
+                if (history.length > 10) {
+                    history = history.slice(-10);
+                }
+
+                localStorage.setItem(this.storageKey, JSON.stringify(history));
+                
+                // Auto cleanup expired sessions
+                this.cleanupExpiredSessions();
+            }
+
+            // Cleanup expired sessions from localStorage
+            cleanupExpiredSessions() {
+                try {
+                    const saved = localStorage.getItem(this.storageKey);
+                    if (!saved) return;
+
+                    let history = JSON.parse(saved);
+                    const now = new Date();
+                    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 hari
+
+                    history = history.filter(session => {
+                        const sessionDate = new Date(session.lastActivity);
+                        const age = now - sessionDate;
+                        return age < maxAge;
+                    });
+
+                    localStorage.setItem(this.storageKey, JSON.stringify(history));
+                } catch (error) {
+                    console.warn('Failed to cleanup session history:', error);
+                }
+            }
+
+            // Format time for display
+            formatTime(timeString) {
+                const date = new Date(timeString);
+                return date.toLocaleTimeString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+        }
+
         // Cek dukungan Web Speech API
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechSynthesis = window.speechSynthesis;
@@ -246,7 +508,13 @@
         const stopBtn = document.getElementById('stopBtn');
         const transcriptText = document.getElementById('transcriptText');
         const conversationEl = document.getElementById('conversation');
+        const sessionInfoEl = document.getElementById('sessionId');
+        const lastActivityEl = document.getElementById('lastActivity');
+        const newSessionBtn = document.getElementById('newSessionBtn');
+        const saveSessionBtn = document.getElementById('saveSessionBtn');
 
+        // Initialize Session Manager
+        const sessionManager = new SessionManager();
         let recognition;
         let isRecording = false;
 
@@ -269,10 +537,19 @@
             return true;
         }
 
+        // Update session info display
+        function updateSessionInfo() {
+            const sessionInfo = sessionManager.getSessionInfo();
+            if (sessionInfo) {
+                sessionInfoEl.textContent = sessionInfo.sessionId;
+                lastActivityEl.textContent = sessionManager.formatTime(sessionInfo.lastActivity);
+            }
+        }
+
         // Inisialisasi Speech Recognition
         function initSpeechRecognition() {
             recognition = new SpeechRecognition();
-            recognition.lang = 'id-ID'; // Bahasa Indonesia untuk input
+            recognition.lang = 'ja-JP'; // Bahasa Jepang untuk input
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
@@ -287,9 +564,13 @@
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 transcriptText.textContent = transcript;
+                
+                // Add to session history
+                sessionManager.addMessage('user', transcript);
+                updateSessionInfo();
                 addMessage(transcript, 'user');
 
-                // Proses dengan AI (placeholder)
+                // Proses dengan AI
                 processWithAI(transcript);
             };
 
@@ -335,7 +616,14 @@
         function addMessage(text, type) {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${type}`;
-            messageEl.textContent = text;
+            messageEl.innerHTML = `
+                <div class="message-content">${text}</div>
+                <div class="message-meta">
+                    <span>${sessionManager.formatTime(new Date().toISOString())}</span>
+                    <span>•</span>
+                    <span>${type === 'user' ? 'Anda' : 'IA'}</span>
+                </div>
+            `;
             conversationEl.appendChild(messageEl);
             conversationEl.scrollTop = conversationEl.scrollHeight;
         }
@@ -345,19 +633,60 @@
             try {
                 transcriptText.textContent = '🤖 AI sedang merespons...';
                 
-                // Kirim ke backend API
+                // Get session history
+                const sessionHistory = sessionManager.getSessionHistory();
+                
+                // Cek apakah ini pesan pertama (belum ada system message)
+                const isFirstMessage = sessionHistory.length === 0;
+                
+                // System message untuk memberi tahu AI perannya
+                const systemMessage = {
+                    role: 'user',
+                    content: `Anda adalah IA, teman chatting bahasa Jepang yang ramah dan sabar.
+Nama panggilan Anda adalah IA. Tugas Anda adalah membantu pengguna berlatih percakapan 
+sehari-hari dalam bahasa Jepang. Gunakan ekspresi alami dan sesekali 
+sebut nama panggilan Anda 'IA' dalam percakapan.
+
+**Peraturan:**
+- Selalu gunakan bahasa Jepang dalam percakapan
+- Gunakan huruf Hiragana, Katakana, dan Kanji sesuai konteks
+- Berikan jawaban yang alami dan mudah dipahami
+- Jangan gunakan bahasa Indonesia dalam respons Anda
+- Fokus pada percakapan santai dan pembelajaran bahasa
+- Gunakan ekspresi yang umum digunakan dalam kehidupan sehari-hari
+- Sebut nama Anda 'IA' sesekali dalam percakapan
+- Tanggapi dengan ramah dan sabar
+- Selalu tulis romaji
+
+日本語で会話練習をしましょう！`
+                };
+
+                // Siapkan messages untuk dikirim ke AI
+                let messagesToSend = [];
+                
+                if (isFirstMessage) {
+                    // Untuk pesan pertama, kirim system message + user message
+                    messagesToSend = [
+                        systemMessage,
+                        { role: 'user', content: text }
+                    ];
+                } else {
+                    // Untuk pesan selanjutnya, gunakan seluruh history
+                    messagesToSend = sessionHistory;
+                }
+                
+                // Kirim ke backend API dengan session ID
                 const response = await fetch('/api/openrouter/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        messages: [
-                            { role: 'user', content: text }
-                        ],
+                        messages: messagesToSend,
                         model: 'google/gemma-3-4b-it:free',
                         temperature: 0.7,
-                        maxTokens: 500
+                        maxTokens: 500,
+                        sessionId: sessionManager.currentSession.sessionId
                     })
                 });
 
@@ -365,6 +694,11 @@
 
                 if (data.success) {
                     const aiResponse = data.text;
+                    
+                    // Add to session history
+                    sessionManager.addMessage('assistant', aiResponse);
+                    updateSessionInfo();
+                    
                     addMessage(aiResponse, 'ai japanese');
 
                     // Tambahkan respon dalam bahasa Indonesia
@@ -400,8 +734,38 @@
         recordBtn.addEventListener('click', startRecording);
         stopBtn.addEventListener('click', stopRecording);
 
+        newSessionBtn.addEventListener('click', () => {
+            if (confirm('Anda yakin ingin memulai sesi baru? Sesi saat ini akan direset.')) {
+                sessionManager.createSession();
+                updateSessionInfo();
+                conversationEl.innerHTML = '';
+                transcriptText.textContent = 'Sesi baru dimulai. Silakan tekan tombol rekam untuk memulai...';
+            }
+        });
+
+        saveSessionBtn.addEventListener('click', () => {
+            const sessionInfo = sessionManager.getSessionInfo();
+            if (sessionInfo) {
+                // Simpan ke localStorage sebagai backup
+                const sessionData = JSON.stringify(sessionManager.currentSession, null, 2);
+                const blob = new Blob([sessionData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${sessionInfo.sessionId}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                alert(`Sesi berhasil disimpan: ${sessionInfo.sessionId}`);
+            }
+        });
+
         // Inisialisasi aplikasi
         document.addEventListener('DOMContentLoaded', () => {
+            // Load or create session
+            sessionManager.loadSession();
+            updateSessionInfo();
+            
             checkBrowserSupport();
         });
     </script>
