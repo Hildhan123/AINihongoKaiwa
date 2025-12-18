@@ -37,25 +37,26 @@ export interface OpenRouterError {
   };
 }
 
-// Free models available on OpenRouter
+// Free models available on OpenRouter (Deprecated)
 export const FREE_MODELS = {
-  GEMMA2_9B: 'google/gemma-3-4b-it:free',
-  LLAMA_3_2_1B: 'meta-llama/llama-3.2-1b-preview',
-  LLAMA_3_2_3B: 'meta-llama/llama-3.2-3b-preview',
-  PHI_3: 'microsoft/phi-3-mini-4k-instruct',
-  CODEGEEX_4: 'thudm/codegeex4-all-9b',
+  GEMMA3_4B: 'google/gemma-3-4b-it:free',
+  openai: 'openai/gpt-oss-120b:free',
+  amazon_nova_2: 'amazon/nova-2-lite-v1:free',
+  GEMMA3_27B: 'google/gemma-3-27b-it:free',
+  GEMINI_2FLASH: 'google/gemini-2.0-flash-exp:free',
+  qwen_34b: 'qwen/qwen3-4b:free',
 } as const;
 
 // Configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = FREE_MODELS.GEMMA2_9B;
+const DEFAULT_MODEL = FREE_MODELS.openai
 
 class OpenRouterService {
   private apiKey: string;
   private defaultHeaders: Record<string, string>;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.OPENROUTER_API_KEY || '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';
+    this.apiKey = apiKey || process.env.OPENROUTER_API_KEY;
     
     if (!this.apiKey) {
       console.warn('OpenRouter API key not found. Please set OPENROUTER_API_KEY environment variable.');
@@ -171,7 +172,7 @@ class OpenRouterService {
    */
   async chat(
     messages: OpenRouterMessage[],
-    model: string = 'google/gemma-3-4b-it:free',
+    model: string = DEFAULT_MODEL,
     options?: {
       temperature?: number;
       max_tokens?: number;
@@ -180,25 +181,47 @@ class OpenRouterService {
     text: string;
     usage?: OpenRouterResponse['usage'];
   }> {
-    // Add system message to set context for Japanese language learning
+    // System message untuk memberi tahu AI perannya
     const systemMessage: OpenRouterMessage = {
       role: 'user',
-      content: `Anda adalah teman chatting bahasa Jepang yang ramah dan sabar.
-      Tugas Anda adalah membantu pengguna berlatih percakapan bahasa Jepang sehari-hari.
-      - Selalu gunakan bahasa Jepang dalam percakapan
-      - Gunakan huruf Hiragana, Katakana, dan Kanji sesuai konteks
-      - Berikan jawaban yang alami dan mudah dipahami
-      - Jangan gunakan bahasa Indonesia dalam respons Anda
-      - Fokus pada percakapan santai dan pembelajaran bahasa
-      - Gunakan ekspresi yang umum digunakan dalam kehidupan sehari-hari
-      - Tidak perlu menulis romajinya (Kecuali jika diminta)
-      
-      日本語で会話練習をしましょう！`
+      content: `You are Faulzig, a friendly and patient Japanese chatting companion.
+Your name is Faulzig. Your task is to help users practice everyday Japanese conversations.
+Use natural expressions and occasionally mention your name 'Faulzig' in the conversation.
+
+**Rules:**
+- Dont use romaji at all
+- Always use Japanese in conversations
+- Use Hiragana, Katakana, and Kanji according to context
+- Provide natural and easy-to-understand answers
+- Focus on casual conversations and language learning
+- Use expressions commonly used in daily life
+- Mention your name 'Faulzig' occasionally in conversations
+- Respond in a friendly and patient manner
+- Dont mention you are an AI model and dont mention you are chatGPT
+- If I ask you about your name, please answer "Faulzig"
+
+Let's practice Japanese conversation!`
     };
 
-    const messagesWithSystem = [systemMessage, ...messages];
+    // Cek apakah ini pesan pertama (belum ada system message)
+    const isFirstMessage = messages.length === 0 || 
+                          (messages.length === 1 && messages[0].role === 'user');
+
+    // Siapkan messages untuk dikirim ke OpenRouter
+    let messagesToSend = [];
     
-    const response = await this.sendChat(messages, model, options);
+    if (isFirstMessage) {
+      // Untuk pesan pertama, tambahkan system message
+      messagesToSend = [
+        systemMessage,
+        ...messages
+      ];
+    } else {
+      // Untuk pesan selanjutnya, gunakan seluruh history
+      messagesToSend = messages;
+    }
+    
+    const response = await this.sendChat(messagesToSend, model, options);
     return this.processResponse(response);
   }
 

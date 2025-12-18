@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Nihongo Kaiwa - Latihan Berbicara Bahasa Jepang</title>
+    <title>AI Nihongo Kaiwa - Japanese Conversation Practice</title>
     <style>
         * {
             margin: 0;
@@ -173,6 +173,38 @@
             100% { transform: scale(1); }
         }
 
+        .message-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-tts-stop {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+            cursor: pointer;
+            background: #dc3545;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-tts-stop:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .btn-tts-stop:active {
+            transform: translateY(0);
+        }
+
+        .tts-playing {
+            animation: pulse 1s infinite;
+        }
+
         .conversation {
             background: #f8f9fa;
             border-radius: 10px;
@@ -279,42 +311,42 @@
         </div>
 
         <h1>🤖 AI Nihongo Kaiwa</h1>
-        <p class="subtitle">Latihan berbicara bahasa Jepang dengan AI</p>
+        <p class="subtitle">Japanese conversation practice with AI</p>
 
         <div class="session-controls">
-            <button id="newSessionBtn" class="btn-session btn-new">🆕 Sesi Baru</button>
-            <button id="saveSessionBtn" class="btn-session btn-save">💾 Simpan Sesi</button>
+            <button id="newSessionBtn" class="btn-session btn-new">🆕 New Session</button>
+            <button id="saveSessionBtn" class="btn-session btn-save">💾 Save Session</button>
         </div>
 
         <div id="warning" class="warning" style="display: none;">
-            Peringatan: Browser Anda tidak mendukung Web Speech API
+            Warning: Your browser does not support Web Speech API
         </div>
 
         <div id="status" class="status offline">
-            Status: Memeriksa koneksi...
+            Status: Checking connection...
         </div>
 
         <div class="controls">
             <button id="recordBtn" class="btn btn-record" disabled>
-                🎤 Mulai Rekam
+                🎤 Start Recording
             </button>
             <button id="stopBtn" class="btn btn-stop" disabled>
-                ⏹️ Berhenti
+                ⏹️ Stop
             </button>
         </div>
 
         <div class="transcript">
-            <strong>Transkrip:</strong><br>
-            <span id="transcriptText">Silakan tekan tombol rekam untuk memulai...</span>
+            <strong>Transcript:</strong><br>
+            <span id="transcriptText">Please press the record button to start...</span>
         </div>
 
         <div class="conversation" id="conversation">
-            <!-- Percakapan akan muncul di sini -->
+            <!-- Conversation will appear here -->
         </div>
 
         <div class="footer">
-            <p>Gunakan browser modern seperti Chrome atau Edge untuk pengalaman terbaik</p>
-            <p>Fitur ini menggunakan Web Speech API (gratis dan offline)</p>
+            <p>Use modern browsers like Chrome or Edge for the best experience</p>
+            <p>This feature uses Web Speech API (free and offline)</p>
         </div>
     </div>
 
@@ -324,8 +356,8 @@
             constructor() {
                 this.currentSession = null;
                 this.storageKey = 'ai_nihongo_sessions';
-                this.maxMessages = 50; // Batasi 50 pesan terakhir
-                this.sessionTimeout = 30 * 60 * 1000; // 30 menit timeout
+                this.maxMessages = 50; // Limit to last 50 messages
+                this.sessionTimeout = 30 * 60 * 1000; // 30 minutes timeout
             }
 
             // Generate unique session ID
@@ -341,7 +373,7 @@
                     createdAt: new Date().toISOString(),
                     lastActivity: new Date().toISOString(),
                     language: 'ja-JP',
-                    model: 'google/gemma-3-4b-it:free',
+                    model: 'idk',
                     messages: [],
                     settings: {
                         temperature: 0.7,
@@ -350,7 +382,7 @@
                     }
                 };
                 
-                // Save to sessionStorage (hanya selama browser terbuka)
+                // Save to sessionStorage (only during browser session)
                 sessionStorage.setItem('current_session', JSON.stringify(this.currentSession));
                 
                 // Update localStorage tracking
@@ -390,7 +422,7 @@
                 this.currentSession.messages.push(message);
                 this.currentSession.lastActivity = new Date().toISOString();
 
-                // Batasi jumlah pesan
+                // Limit number of messages
                 if (this.currentSession.messages.length > this.maxMessages) {
                     this.currentSession.messages = this.currentSession.messages.slice(-this.maxMessages);
                 }
@@ -445,7 +477,7 @@
                     console.warn('Failed to parse session history:', error);
                 }
 
-                // Cek apakah session sudah ada di history
+                // Check if session already exists in history
                 const existingIndex = history.findIndex(s => s.sessionId === this.currentSession.sessionId);
                 const sessionInfo = this.getSessionInfo();
 
@@ -455,7 +487,7 @@
                     history.push(sessionInfo);
                 }
 
-                // Batasi history (max 10 sessions)
+                // Limit history (max 10 sessions)
                 if (history.length > 10) {
                     history = history.slice(-10);
                 }
@@ -474,7 +506,7 @@
 
                     let history = JSON.parse(saved);
                     const now = new Date();
-                    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 hari
+                    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
                     history = history.filter(session => {
                         const sessionDate = new Date(session.lastActivity);
@@ -491,14 +523,14 @@
             // Format time for display
             formatTime(timeString) {
                 const date = new Date(timeString);
-                return date.toLocaleTimeString('id-ID', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                return date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
                 });
             }
         }
 
-        // Cek dukungan Web Speech API
+        // Check Web Speech API support
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechSynthesis = window.speechSynthesis;
 
@@ -518,20 +550,20 @@
         let recognition;
         let isRecording = false;
 
-        // Cek dukungan browser
+        // Check browser support
         function checkBrowserSupport() {
             if (!SpeechRecognition) {
                 warningEl.style.display = 'block';
-                statusEl.textContent = 'Status: Browser tidak mendukung Web Speech API';
+                statusEl.textContent = 'Status: Browser does not support Web Speech API';
                 statusEl.className = 'status offline';
                 return false;
             }
 
             if (!speechSynthesis) {
-                warningEl.innerHTML = 'Peringatan: Browser Anda tidak mendukung Text-to-Speech';
+                warningEl.innerHTML = 'Warning: Your browser does not support Text-to-Speech';
             }
 
-            statusEl.textContent = 'Status: Siap digunakan';
+            statusEl.textContent = 'Status: Ready to use';
             statusEl.className = 'status online';
             recordBtn.disabled = false;
             return true;
@@ -546,19 +578,19 @@
             }
         }
 
-        // Inisialisasi Speech Recognition
+        // Initialize Speech Recognition
         function initSpeechRecognition() {
             recognition = new SpeechRecognition();
-            recognition.lang = 'ja-JP'; // Bahasa Jepang untuk input
+            recognition.lang = 'ja-JP'; // Japanese for input
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
                 isRecording = true;
-                recordBtn.textContent = '🔴 Sedang merekam...';
+                recordBtn.textContent = '🔴 Recording...';
                 recordBtn.classList.add('recording');
                 stopBtn.disabled = false;
-                transcriptText.textContent = 'Sedang mendengarkan...';
+                transcriptText.textContent = 'Listening...';
             };
 
             recognition.onresult = (event) => {
@@ -570,25 +602,25 @@
                 updateSessionInfo();
                 addMessage(transcript, 'user');
 
-                // Proses dengan AI
+                // Process with AI
                 processWithAI(transcript);
             };
 
             recognition.onend = () => {
                 isRecording = false;
-                recordBtn.textContent = '🎤 Mulai Rekam';
+                recordBtn.textContent = '🎤 Start Recording';
                 recordBtn.classList.remove('recording');
                 stopBtn.disabled = true;
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error', event.error);
-                transcriptText.textContent = 'Terjadi kesalahan, silakan coba lagi';
+                transcriptText.textContent = 'An error occurred, please try again';
                 stopRecording();
             };
         }
 
-        // Mulai merekam
+        // Start recording
         function startRecording() {
             if (!recognition) {
                 initSpeechRecognition();
@@ -601,7 +633,7 @@
             }
         }
 
-        // Berhenti merekam
+        // Stop recording
         function stopRecording() {
             if (recognition && isRecording) {
                 try {
@@ -612,78 +644,79 @@
             }
         }
 
-        // Tambahkan pesan ke percakapan
+        // Add message to conversation
         function addMessage(text, type) {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${type}`;
-            messageEl.innerHTML = `
+            
+            let messageHTML = `
                 <div class="message-content">${text}</div>
                 <div class="message-meta">
                     <span>${sessionManager.formatTime(new Date().toISOString())}</span>
                     <span>•</span>
-                    <span>${type === 'user' ? 'Anda' : 'IA'}</span>
+                    <span>${type === 'user' ? 'You' : 'AI'}</span>
                 </div>
             `;
+            
+            // Add TTS stop button only for AI messages
+            if (type === 'ai' || type === 'ai japanese') {
+                // Generate unique ID for this message
+                const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                messageEl.id = messageId;
+                
+                messageHTML += `
+                    <div class="message-controls">
+                        <button class="btn-tts-stop" onclick="stopTTS('${messageId}')">⏹️ Stop Voice</button>
+                    </div>
+                `;
+            }
+            
+            messageEl.innerHTML = messageHTML;
             conversationEl.appendChild(messageEl);
             conversationEl.scrollTop = conversationEl.scrollHeight;
         }
 
-        // Proses dengan AI (OpenRouter)
+        // Global variable to track current TTS utterance
+        let currentUtterance = null;
+        let currentMessageId = null;
+
+        // Stop TTS function
+        window.stopTTS = function(messageId) {
+            if (speechSynthesis && speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+                
+                // Remove pulsing animation from all messages
+                document.querySelectorAll('.message.tts-playing').forEach(msg => {
+                    msg.classList.remove('tts-playing');
+                });
+                
+                // Update button text
+                const stopBtn = document.querySelector(`#${messageId} .btn-tts-stop`);
+                if (stopBtn) {
+                    stopBtn.textContent = '⏹️ Stop Voice';
+                }
+                
+                transcriptText.textContent = 'TTS stopped';
+            }
+        };
+
+        // Process with AI (OpenRouter)
         async function processWithAI(text) {
             try {
-                transcriptText.textContent = '🤖 AI sedang merespons...';
+                transcriptText.textContent = '🤖 AI is responding...';
                 
                 // Get session history
                 const sessionHistory = sessionManager.getSessionHistory();
                 
-                // Cek apakah ini pesan pertama (belum ada system message)
-                const isFirstMessage = sessionHistory.length === 0;
-                
-                // System message untuk memberi tahu AI perannya
-                const systemMessage = {
-                    role: 'user',
-                    content: `Anda adalah IA, teman chatting bahasa Jepang yang ramah dan sabar.
-Nama panggilan Anda adalah IA. Tugas Anda adalah membantu pengguna berlatih percakapan 
-sehari-hari dalam bahasa Jepang. Gunakan ekspresi alami dan sesekali 
-sebut nama panggilan Anda 'IA' dalam percakapan.
-
-**Peraturan:**
-- Selalu gunakan bahasa Jepang dalam percakapan
-- Gunakan huruf Hiragana, Katakana, dan Kanji sesuai konteks
-- Berikan jawaban yang alami dan mudah dipahami
-- Jangan gunakan bahasa Indonesia dalam respons Anda
-- Fokus pada percakapan santai dan pembelajaran bahasa
-- Gunakan ekspresi yang umum digunakan dalam kehidupan sehari-hari
-- Sebut nama Anda 'IA' sesekali dalam percakapan
-- Tanggapi dengan ramah dan sabar
-- Selalu tulis romaji
-
-日本語で会話練習をしましょう！`
-                };
-
-                // Siapkan messages untuk dikirim ke AI
-                let messagesToSend = [];
-                
-                if (isFirstMessage) {
-                    // Untuk pesan pertama, kirim system message + user message
-                    messagesToSend = [
-                        systemMessage,
-                        { role: 'user', content: text }
-                    ];
-                } else {
-                    // Untuk pesan selanjutnya, gunakan seluruh history
-                    messagesToSend = sessionHistory;
-                }
-                
-                // Kirim ke backend API dengan session ID
+                // Send to backend API with session ID (model now default from backend)
                 const response = await fetch('/api/openrouter/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        messages: messagesToSend,
-                        model: 'google/gemma-3-4b-it:free',
+                        messages: sessionHistory,
                         temperature: 0.7,
                         maxTokens: 500,
                         sessionId: sessionManager.currentSession.sessionId
@@ -699,34 +732,95 @@ sebut nama panggilan Anda 'IA' dalam percakapan.
                     sessionManager.addMessage('assistant', aiResponse);
                     updateSessionInfo();
                     
-                    addMessage(aiResponse, 'ai japanese');
+                    // Add Japanese response message
+                    const japaneseMessageEl = document.createElement('div');
+                    japaneseMessageEl.className = 'message ai japanese';
+                    
+                    // Generate unique ID for this message
+                    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    japaneseMessageEl.id = messageId;
+                    
+                    japaneseMessageEl.innerHTML = `
+                        <div class="message-content">${aiResponse}</div>
+                        <div class="message-meta">
+                            <span>${sessionManager.formatTime(new Date().toISOString())}</span>
+                            <span>•</span>
+                            <span>AI</span>
+                        </div>
+                        <div class="message-controls">
+                            <button class="btn-tts-stop" onclick="stopTTS('${messageId}')">⏹️ Stop Voice</button>
+                        </div>
+                    `;
+                    conversationEl.appendChild(japaneseMessageEl);
+                    
+                    // Add English response message
+                    const englishResponse = "AI has responded in Japanese!";
+                    addMessage(englishResponse, 'ai');
 
-                    // Tambahkan respon dalam bahasa Indonesia
-                    const indonesianResponse = "AI telah merespons dalam bahasa Jepang!";
-                    addMessage(indonesianResponse, 'ai');
-
-                    // TTS untuk respon Jepang (jika didukung)
+                    // TTS for Japanese response (if supported)
                     if (speechSynthesis && aiResponse) {
+                        // Stop any existing TTS
+                        if (speechSynthesis.speaking) {
+                            speechSynthesis.cancel();
+                        }
+                        
                         const utterance = new SpeechSynthesisUtterance(aiResponse);
                         utterance.lang = 'ja-JP';
                         utterance.rate = 0.9;
                         utterance.pitch = 1;
+                        
+                        // Track current utterance and message
+                        currentUtterance = utterance;
+                        currentMessageId = messageId;
+                        
+                        // Add pulsing animation to the message
+                        japaneseMessageEl.classList.add('tts-playing');
+
+                        utterance.onstart = () => {
+                            transcriptText.textContent = '🔊 AI is speaking...';
+                            const stopBtn = document.querySelector(`#${messageId} .btn-tts-stop`);
+                            if (stopBtn) {
+                                stopBtn.textContent = '⏹️ Stop Voice';
+                            }
+                        };
+                        
+                        utterance.onend = () => {
+                            transcriptText.textContent = 'AI finished speaking';
+                            japaneseMessageEl.classList.remove('tts-playing');
+                            currentUtterance = null;
+                            currentMessageId = null;
+                            conversationEl.scrollTop = conversationEl.scrollHeight;
+                        };
+                        
+                        utterance.onerror = (event) => {
+                            console.error('TTS error:', event.error);
+                            transcriptText.textContent = 'TTS error occurred';
+                            japaneseMessageEl.classList.remove('tts-playing');
+                            currentUtterance = null;
+                            currentMessageId = null;
+                            conversationEl.scrollTop = conversationEl.scrollHeight;
+                        };
 
                         try {
                             speechSynthesis.speak(utterance);
                         } catch (error) {
                             console.error('TTS error:', error);
+                            transcriptText.textContent = 'TTS error occurred';
+                            conversationEl.scrollTop = conversationEl.scrollHeight;
                         }
+                    } else {
+                        conversationEl.scrollTop = conversationEl.scrollHeight;
                     }
                 } else {
-                    throw new Error(data.error || 'Gagal mendapatkan respons dari AI');
+                    throw new Error(data.error || 'Failed to get response from AI');
                 }
             } catch (error) {
                 console.error('AI processing error:', error);
-                transcriptText.textContent = 'Terjadi kesalahan saat menghubungi AI. Silakan coba lagi.';
+                transcriptText.textContent = 'An error occurred while connecting to AI. Please try again.';
                 
-                // Tampilkan pesan error di percakapan
-                addMessage('Maaf, terjadi kesalahan koneksi. Silakan coba lagi.', 'ai');
+                // Show error message in conversation
+                addMessage('Sorry, there was a connection error. Please try again.', 'ai');
+                conversationEl.scrollTop = conversationEl.scrollHeight;
             }
         }
 
@@ -735,18 +829,18 @@ sebut nama panggilan Anda 'IA' dalam percakapan.
         stopBtn.addEventListener('click', stopRecording);
 
         newSessionBtn.addEventListener('click', () => {
-            if (confirm('Anda yakin ingin memulai sesi baru? Sesi saat ini akan direset.')) {
+            if (confirm('Are you sure you want to start a new session? Current session will be reset.')) {
                 sessionManager.createSession();
                 updateSessionInfo();
                 conversationEl.innerHTML = '';
-                transcriptText.textContent = 'Sesi baru dimulai. Silakan tekan tombol rekam untuk memulai...';
+                transcriptText.textContent = 'New session started. Please press the record button to start...';
             }
         });
 
         saveSessionBtn.addEventListener('click', () => {
             const sessionInfo = sessionManager.getSessionInfo();
             if (sessionInfo) {
-                // Simpan ke localStorage sebagai backup
+                // Save to localStorage as backup
                 const sessionData = JSON.stringify(sessionManager.currentSession, null, 2);
                 const blob = new Blob([sessionData], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -756,11 +850,11 @@ sebut nama panggilan Anda 'IA' dalam percakapan.
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                alert(`Sesi berhasil disimpan: ${sessionInfo.sessionId}`);
+                alert(`Session saved successfully: ${sessionInfo.sessionId}`);
             }
         });
 
-        // Inisialisasi aplikasi
+        // Initialize application
         document.addEventListener('DOMContentLoaded', () => {
             // Load or create session
             sessionManager.loadSession();

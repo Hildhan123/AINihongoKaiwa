@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -5,7 +6,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { openRouterService, OpenRouterMessage, FREE_MODELS } from './services/openrouter.js';
 
-// Mendapatkan __dirname di ES Modules
+
+// Get __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -29,7 +31,7 @@ app.get('/api/status', (req: express.Request, res: express.Response) => {
 // OpenRouter Chat API
 app.post('/api/openrouter/chat', async (req: express.Request, res: express.Response) => {
   try {
-    const { messages, model, temperature, maxTokens, sessionId } = req.body;
+    const { messages, temperature, maxTokens, sessionId } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({
@@ -38,17 +40,16 @@ app.post('/api/openrouter/chat', async (req: express.Request, res: express.Respo
     }
 
     console.log('📨 Received chat request:', {
-      model: model || 'google/gemma-3-4b-it:free',
       messagesCount: messages.length,
       temperature: temperature || 0.7,
       maxTokens: maxTokens || 1000,
       sessionId: sessionId || 'no-session'
     });
 
-    // Kirim ke OpenRouter
+    // Send to OpenRouter (model now default from backend)
     const response = await openRouterService.chat(
       messages,
-      model || 'google/gemma-3-4b-it:free',
+      undefined, // Let backend use default model
       {
         temperature: temperature || 0.7,
         max_tokens: maxTokens || 1000
@@ -145,8 +146,8 @@ app.get('/', (req: express.Request, res: express.Response) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-  console.log('Tekan Ctrl+C untuk menghentikan server');
+  console.log(`Server running at http://localhost:${PORT}`);
+  console.log('Press Ctrl+C to stop the server');
 });
 
 export default app;
