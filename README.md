@@ -95,16 +95,6 @@ AI-nihongo-kaiwa/
 4. Push to branch (`git push origin new-feature`)
 5. Create a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For questions or suggestions, please contact:
-- Email: [your-email@example.com]
-- GitHub: [@username](https://github.com/username)
-
 ---
 
 **Happy learning Japanese!** 🎌
