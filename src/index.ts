@@ -31,7 +31,7 @@ app.get('/api/status', (req: express.Request, res: express.Response) => {
 // OpenRouter Chat API
 app.post('/api/openrouter/chat', async (req: express.Request, res: express.Response) => {
   try {
-    const { messages, temperature, maxTokens, sessionId } = req.body;
+    const { messages, temperature, maxTokens, sessionId, model } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({
@@ -43,13 +43,14 @@ app.post('/api/openrouter/chat', async (req: express.Request, res: express.Respo
       messagesCount: messages.length,
       temperature: temperature || 0.7,
       maxTokens: maxTokens || 1000,
-      sessionId: sessionId || 'no-session'
+      sessionId: sessionId || 'no-session',
+      model: model || 'default'
     });
 
-    // Send to OpenRouter (model now default from backend)
+    // Send to OpenRouter with selected model
     const response = await openRouterService.chat(
       messages,
-      undefined, // Let backend use default model
+      model, // Use selected model or default
       {
         temperature: temperature || 0.7,
         max_tokens: maxTokens || 1000

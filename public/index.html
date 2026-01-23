@@ -83,6 +83,34 @@
             transform: translateY(-1px);
         }
 
+        .model-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .model-select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .model-select:hover {
+            border-color: #007bff;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
         h1 {
             text-align: center;
             color: #333;
@@ -316,6 +344,18 @@
         <div class="session-controls">
             <button id="newSessionBtn" class="btn-session btn-new">🆕 New Session</button>
             <button id="saveSessionBtn" class="btn-session btn-save">💾 Save Session</button>
+        </div>
+
+        <div class="model-selection">
+            <label for="modelSelect">Select Model:</label>
+            <select id="modelSelect" class="model-select">
+                <option value="google/gemma-3-4b-it:free">Gemini 3.4B</option>
+                <option value="openai/gpt-oss-120b:free">OpenAI GPT</option>
+                <option value="amazon/nova-2-lite-v1:free">Amazon Nova 2</option>
+                <option value="google/gemma-3-27b-it:free">Gemini 3.27B</option>
+                <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash</option>
+                <option value="qwen/qwen3-4b:free">Qwen 3.4B</option>
+            </select>
         </div>
 
         <div id="warning" class="warning" style="display: none;">
@@ -709,19 +749,24 @@
                 // Get session history
                 const sessionHistory = sessionManager.getSessionHistory();
                 
-                // Send to backend API with session ID (model now default from backend)
-                const response = await fetch('/api/openrouter/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        messages: sessionHistory,
-                        temperature: 0.7,
-                        maxTokens: 500,
-                        sessionId: sessionManager.currentSession.sessionId
-                    })
-                });
+                // Get selected model
+               const modelSelect = document.getElementById('modelSelect');
+               const selectedModel = modelSelect ? modelSelect.value : 'google/gemma-3-4b-it:free';
+
+               // Send to backend API with session ID and selected model
+               const response = await fetch('/api/openrouter/chat', {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json'
+                   },
+                   body: JSON.stringify({
+                       messages: sessionHistory,
+                       temperature: 0.7,
+                       maxTokens: 500,
+                       sessionId: sessionManager.currentSession.sessionId,
+                       model: selectedModel
+                   })
+               });
 
                 const data = await response.json();
 

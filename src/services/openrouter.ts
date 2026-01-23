@@ -49,7 +49,7 @@ export const FREE_MODELS = {
 
 // Configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = FREE_MODELS.openai
+const DEFAULT_MODEL = FREE_MODELS.GEMMA3_4B
 
 class OpenRouterService {
   private apiKey: string;
